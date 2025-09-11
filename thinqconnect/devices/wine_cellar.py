@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import (
     READABILITY,
     WRITABILITY,
@@ -88,35 +88,19 @@ class WineCellarProfile(ConnectDeviceProfile):
                 self._set_location_properties(attr_key, _sub_profile.properties)
 
 
+@dataclass
 class WineCellarSubDevice(ConnectSubDevice):
     """WineCellar Device Sub."""
 
-    def __init__(
-        self,
-        profiles: WineCellarSubProfile,
-        location_name: Location,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-    ):
-        super().__init__(
-            profiles,
-            location_name,
-            thinq_api,
-            device_id,
-            device_type,
-            model_name,
-            alias,
-            reportable,
-            is_single_resource=True,
-        )
+    is_single_resource: bool = True
 
     @property
     def profiles(self) -> WineCellarSubProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: WineCellarSubProfile):
+        self._profiles = profiles
 
     def _set_custom_resources(
         self,
@@ -139,7 +123,7 @@ class WineCellarSubDevice(ConnectSubDevice):
         _payload = self.profiles.get_range_attribute_payload(_target_temperature_key, temperature)
         _payload[_resource_key] = dict(
             {
-                "locationName": self._location_name,
+                "locationName": self.location_name,
             },
             **(_payload[_resource_key]),
         )
@@ -152,34 +136,20 @@ class WineCellarSubDevice(ConnectSubDevice):
         return await self._set_target_temperature(temperature, "F")
 
 
+@dataclass
 class WineCellarDevice(ConnectMainDevice):
     """WineCellar Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        self._sub_devices: dict[str, WineCellarSubDevice] = {}
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=WineCellarProfile(profile=profile),
-            sub_device_type=WineCellarSubDevice,
-        )
+    PROFILE_TYPE = WineCellarProfile
+    SUB_DEVICE_TYPE: type = WineCellarSubDevice
 
     @property
     def profiles(self) -> WineCellarProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: WineCellarProfile):
+        self._profiles = profiles
 
     def get_sub_device(self, location_name: Location) -> WineCellarSubDevice:
         return super().get_sub_device(location_name)

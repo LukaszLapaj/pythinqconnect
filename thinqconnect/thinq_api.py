@@ -188,6 +188,28 @@ class ThinQApi:
             headers=headers,
         )
 
+    async def async_get_device_energy_profile(self, device_id: str, timeout: int | float = 15) -> dict | None:
+        return await self.async_request(
+            method=METH_GET,
+            endpoint=f"devices/energy/{device_id}/profile",
+            timeout=timeout,
+        )
+
+    async def async_get_device_energy_usage(
+        self,
+        device_id: str,
+        energy_property: str,
+        period: str,
+        start_date: str,
+        end_date: str,
+        timeout: int | float = 15,
+    ) -> dict | None:
+        return await self.async_request(
+            method=METH_GET,
+            endpoint=f"devices/energy/{device_id}/usage?property={energy_property}&period={period}&startDate={start_date}&endDate={end_date}",
+            timeout=timeout,
+        )
+
     async def async_post_client_register(self, payload: Any, timeout: int | float = 15) -> dict | None:
         return await self.async_request(
             method=METH_POST,

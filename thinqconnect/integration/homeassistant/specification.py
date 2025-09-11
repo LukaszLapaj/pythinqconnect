@@ -57,6 +57,7 @@ class ThinQPropertyEx(StrEnum):
     HOT_WATER_MAX_TEMPERATURE = auto()
     HOT_WATER_MIN_TEMPERATURE = auto()
     AUTO_TARGET_TEMPERATURE = auto()
+    ENERGY_USAGE = "energyUsage"
 
 
 class ExtendedProperty(StrEnum):
@@ -148,7 +149,7 @@ class ClimatePropertyStateSpec(PropertyStateSpec):
     temperature_preset_key: str | None = None
     temperature_sub_preset_key: str | None = None
     temperature_specs: dict[str, ClimateTemperatureSpec]
-    support_temperature_range: bool = False
+    support_temperature_range_key: str | None = None
     fan_mode_keys: tuple[str, ...] = field(default_factory=tuple)
     humidity_key: str | None = None
     swing_mode_key: str | None = None
@@ -199,7 +200,7 @@ CLIMATE_STATE_MAP = {
                 unit_key=ThinQProperty.TWO_SET_TEMPERATURE_UNIT,
             ),
         },
-        support_temperature_range=True,
+        support_temperature_range_key=ThinQProperty.TWO_SET_ENABLED,
         fan_mode_keys=(ThinQProperty.WIND_STEP, ThinQProperty.WIND_STRENGTH),
         humidity_key=ThinQProperty.HUMIDITY,
         swing_mode_key=ThinQProperty.WIND_ROTATE_UP_DOWN,
@@ -339,6 +340,7 @@ async def set_absolute_time_to_start(
             AirPurifierDevice,
             HumidifierDevice,
             RobotCleanerDevice,
+            VentilatorDevice,
         ),
     ):
         if value:
@@ -356,6 +358,7 @@ async def set_absolute_time_to_stop(api: ConnectBaseDevice, value: time | None) 
             AirPurifierFanDevice,
             AirPurifierDevice,
             HumidifierDevice,
+            VentilatorDevice,
         ),
     ):
         if value:

@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import (
     READABLE_VALUES,
     WRITABLE_VALUES,
@@ -82,65 +82,35 @@ class KimchiRefrigeratorProfile(ConnectDeviceProfile):
                 self._set_location_properties(attr_key, _sub_profile.properties)
 
 
+@dataclass
 class KimchiRefrigeratorSubDevice(ConnectSubDevice):
     """KimchiRefrigerator Device Sub."""
 
-    def __init__(
-        self,
-        profiles: KimchiRefrigeratorSubProfile,
-        location_name: Location,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-    ):
-        super().__init__(
-            profiles,
-            location_name,
-            thinq_api,
-            device_id,
-            device_type,
-            model_name,
-            alias,
-            reportable,
-            is_single_resource=True,
-        )
+    is_single_resource: bool = True
 
     @property
     def profiles(self) -> KimchiRefrigeratorSubProfile:
         return self._profiles
 
+    @profiles.setter
+    def profiles(self, profiles: KimchiRefrigeratorSubProfile):
+        self._profiles = profiles
 
+
+@dataclass
 class KimchiRefrigeratorDevice(ConnectMainDevice):
     """KimchiRefrigerator Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        self._sub_devices: dict[str, KimchiRefrigeratorSubDevice] = {}
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=KimchiRefrigeratorProfile(profile=profile),
-            sub_device_type=KimchiRefrigeratorSubDevice,
-        )
+    PROFILE_TYPE = KimchiRefrigeratorProfile
+    SUB_DEVICE_TYPE: type = KimchiRefrigeratorSubDevice
 
     @property
     def profiles(self) -> KimchiRefrigeratorProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: KimchiRefrigeratorProfile):
+        self._profiles = profiles
 
     def get_sub_device(self, location_name: Location) -> KimchiRefrigeratorSubDevice:
         return super().get_sub_device(location_name)

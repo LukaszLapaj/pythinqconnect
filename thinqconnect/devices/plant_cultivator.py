@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import ConnectDeviceProfile, ConnectMainDevice, ConnectSubDevice
 from .const import Location, Property, Resource
 
@@ -69,53 +69,31 @@ class PlantCultivatorSubProfile(ConnectDeviceProfile):
             super().generate_properties(location_property)
 
 
+@dataclass
 class PlantCultivatorSubDevice(ConnectSubDevice):
-    def __init__(
-        self,
-        profiles: PlantCultivatorSubProfile,
-        location_name: Location,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-    ):
-        super().__init__(profiles, location_name, thinq_api, device_id, device_type, model_name, alias, reportable)
-
     @property
     def profiles(self) -> PlantCultivatorSubProfile:
         return self._profiles
 
+    @profiles.setter
+    def profiles(self, profiles: PlantCultivatorSubProfile):
+        self._profiles = profiles
 
+
+@dataclass
 class PlantCultivatorDevice(ConnectMainDevice):
     """PlantCultivator Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        self._sub_devices: dict[str, PlantCultivatorSubDevice] = {}
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=PlantCultivatorProfile(profile=profile),
-            sub_device_type=PlantCultivatorSubDevice,
-        )
+    PROFILE_TYPE = PlantCultivatorProfile
+    SUB_DEVICE_TYPE: type = ConnectSubDevice
 
     @property
     def profiles(self) -> PlantCultivatorProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: PlantCultivatorProfile):
+        self._profiles = profiles
 
     def get_sub_device(self, location_name: Location) -> PlantCultivatorSubDevice:
         return super().get_sub_device(location_name)

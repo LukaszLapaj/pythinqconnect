@@ -9,7 +9,7 @@ from .devices.air_conditioner import AirConditionerDevice
 from .devices.air_purifier import AirPurifierDevice
 from .devices.air_purifier_fan import AirPurifierFanDevice
 from .devices.ceiling_fan import CeilingFanDevice
-from .devices.connect_device import ConnectBaseDevice
+from .devices.connect_device import USAGE_DAILY, USAGE_MONTHLY, ConnectBaseDevice
 from .devices.cooktop import CooktopDevice
 from .devices.dehumidifier import DehumidifierDevice
 from .devices.dish_washer import DishWasherDevice
@@ -80,4 +80,6 @@ __all__ = [
     "ConnectBaseDevice",
     "ThinQMQTTClient",
     "VentilatorDevice",
+    "USAGE_DAILY",
+    "USAGE_MONTHLY",
 ]

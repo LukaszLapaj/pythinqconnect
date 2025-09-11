@@ -5,11 +5,12 @@ from __future__ import annotations
     * SPDX-License-Identifier: Apache-2.0
 """
 from collections import defaultdict
-from typing import Any
+from dataclasses import InitVar, dataclass, field
+from datetime import date
+from typing import Any, ClassVar
 
 from ..const import PROPERTY_READABLE, PROPERTY_WRITABLE
 from ..device import BaseDevice
-from ..thinq_api import ThinQApi
 from .const import Location, Property, Resource
 
 TYPE = "type"
@@ -18,6 +19,9 @@ READABILITY = "readable"
 WRITABILITY = "writable"
 READABLE_VALUES = "read_values"
 WRITABLE_VALUES = "write_values"
+
+USAGE_MONTHLY = "MONTHLY"
+USAGE_DAILY = "DAILY"
 
 
 class ConnectDeviceProfile:
@@ -333,36 +337,36 @@ class ConnectSubDeviceProfile(ConnectDeviceProfile):
         )
 
 
+@dataclass
 class ConnectBaseDevice(BaseDevice):
-    _CUSTOM_SET_PROPERTY_NAME = {}
+    profile: InitVar[dict[str, Any] | None] = None
+    profiles: ConnectDeviceProfile
+    _profiles: ConnectDeviceProfile = field(init=False, repr=False)
+    _sub_devices: dict[str, ConnectBaseDevice] = field(init=False, default_factory=dict)
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profiles: ConnectDeviceProfile,
-    ):
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-        )
-        self._profiles: ConnectDeviceProfile = profiles
-        self._sub_devices: dict[str, ConnectBaseDevice] = {}
+    energy_properties: list = field(init=False, default_factory=list)
+    energy_profile: dict[str, Any] | None = field(default=None)
+
+    PROFILE_TYPE: ClassVar[type | None]
+    _CUSTOM_SET_PROPERTY_NAME: ClassVar[dict[str, str]] = {}
+    _EXTEND_SET_FN_NAME: ClassVar[list] = []
+
+    def __post_init__(self, profile):
+        if profile and self.PROFILE_TYPE:
+            self._profiles = self.PROFILE_TYPE(profile=profile)
+        if self.energy_profile:
+            self.energy_properties = self.energy_profile.get("result", {}).get("property", [])
 
     @property
     def profiles(self) -> ConnectDeviceProfile:
         return self._profiles
 
+    @profiles.setter
+    def profiles(self, profiles: ConnectDeviceProfile):
+        self._profiles = profiles
+
     def get_property_key(self, resource: str, origin_key: str) -> str | None:
-        _resource_profile: dict[str, str] = self.profiles.get_profile().get(resource, {})
+        _resource_profile: dict[str, str] = self._profiles.get_profile().get(resource, {})
         return str(_prop_key) if (_prop_key := _resource_profile.get(origin_key, None)) else None
 
     def __return_exist_fun_name(self, fn_name: str) -> str | None:
@@ -376,7 +380,7 @@ class ConnectBaseDevice(BaseDevice):
         )
 
     def get_sub_device(self, location_name: Location) -> ConnectBaseDevice | None:
-        if location_name in self.profiles.locations:
+        if location_name in self._profiles.locations:
             return self._sub_devices.get(location_name)
         else:
             return None
@@ -400,7 +404,7 @@ class ConnectBaseDevice(BaseDevice):
 
         value = None
         if resource_status is not None:
-            if resource in self.profiles._CUSTOM_RESOURCES:
+            if resource in self._profiles._CUSTOM_RESOURCES:
                 if self._set_custom_resources(prop_key, prop_attr, resource_status, is_updated):
                     return
             if isinstance(resource_status, dict):
@@ -416,17 +420,17 @@ class ConnectBaseDevice(BaseDevice):
         setattr(self, property_name, value)
 
     def __set_error_status(self, status: dict) -> None:
-        if self.profiles.error:
+        if self._profiles.error:
             self._set_status_attr("error", status.get("error"))
 
     def __set_status(self, status: dict) -> None:
-        for resource, props in self.profiles.get_profile().items():
+        for resource, props in self._profiles.get_profile().items():
             resource_status = status.get(resource)
             for prop_key, prop_attr in props.items():
                 self.__set_property_status(resource_status, resource, prop_key, prop_attr)
 
     def __update_status(self, status: dict) -> None:
-        device_profile = self.profiles.get_profile()
+        device_profile = self._profiles.get_profile()
         for resource, resource_status in status.items():
             if resource not in device_profile:
                 continue
@@ -446,7 +450,7 @@ class ConnectBaseDevice(BaseDevice):
         return (
             getattr(self, property_name)
             if hasattr(self, property_name)
-            and (property_name == "error" or self.profiles.check_attribute_readable(property_name))
+            and (property_name == "error" or self._profiles.check_attribute_readable(property_name))
             else None
         )
 
@@ -460,61 +464,107 @@ class ConnectBaseDevice(BaseDevice):
         return await self.thinq_api.async_post_device_control(device_id=self.device_id, payload=payload)
 
     async def do_attribute_command(self, attribute: Property, value: int | bool) -> dict | None:
-        return await self._do_attribute_command(self.profiles.get_attribute_payload(attribute, value))
+        return await self._do_attribute_command(self._profiles.get_attribute_payload(attribute, value))
 
     async def do_multi_attribute_command(self, attributes: dict[Property, int]) -> dict | None:
         payload = defaultdict(dict)
         for attr, value in attributes.items():
-            for key, sub_dict in self.profiles.get_attribute_payload(attr, value).items():
+            for key, sub_dict in self._profiles.get_attribute_payload(attr, value).items():
                 payload[key].update(sub_dict)
         return await self._do_attribute_command(payload)
 
     async def do_range_attribute_command(self, attribute: Property, value: int) -> dict | None:
-        return await self._do_attribute_command(self.profiles.get_range_attribute_payload(attribute, value))
+        return await self._do_attribute_command(self._profiles.get_range_attribute_payload(attribute, value))
 
     async def do_multi_range_attribute_command(self, attributes: dict[Property, int]) -> dict | None:
         payload = defaultdict(dict)
         for attr, value in attributes.items():
-            for key, sub_dict in self.profiles.get_range_attribute_payload(attr, value).items():
+            for key, sub_dict in self._profiles.get_range_attribute_payload(attr, value).items():
                 payload[key].update(sub_dict)
         return await self._do_attribute_command(payload)
 
     async def do_enum_attribute_command(self, attribute: Property, value: str) -> dict | None:
-        return await self._do_attribute_command(self.profiles.get_enum_attribute_payload(attribute, value))
+        return await self._do_attribute_command(self._profiles.get_enum_attribute_payload(attribute, value))
 
+    @staticmethod
+    def _get_date_type_instance(date_str: str) -> tuple[str | None, date | None]:
+        if len(date_str) == 8:
+            date_type = USAGE_DAILY
+        elif len(date_str) == 6:
+            date_type = USAGE_MONTHLY
+        else:
+            return None, None
 
-class ConnectMainDevice(ConnectBaseDevice):
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profiles: ConnectDeviceProfile,
-        sub_device_type: type,
-    ):
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=profiles,
+        if not date_str.isdigit():
+            return None, None
+
+        year = int(date_str[:4])
+        month = int(date_str[5:6])
+        day = int(date_str[6:]) if date_type == USAGE_DAILY else 1
+
+        try:
+            return date_type, date(year, month, day)
+        except ValueError:
+            return None, None
+
+    def _check_date_format(self, period: str, start_date: str, end_date: str):
+        s_period, s_date = self._get_date_type_instance(start_date)
+        e_period, e_date = self._get_date_type_instance(end_date)
+        if period != s_period:
+            raise ValueError(f"Invalid start date {start_date} in period {period}")
+        if period != e_period:
+            raise ValueError(f"Invalid end date {start_date} in period {period}")
+
+        today = date.today()
+        if today < e_date:
+            raise ValueError(f"Invalid end date {end_date}")
+        if e_date < s_date:
+            raise ValueError(f"Invalid date period {start_date} - {end_date}")
+
+    def _check_valid_energy_property(self, energy_property: str):
+        if not (self.energy_properties and energy_property in self.energy_properties):
+            raise ValueError(f"Energy Property is not supported: {energy_property} {self.energy_properties}")
+
+    async def _get_energy_property_usage(
+        self, energy_property: str, period: str, start_date: str, end_date: str
+    ) -> dict | None:
+        self._check_valid_energy_property(energy_property)
+        self._check_date_format(period, start_date, end_date)
+        return await self.thinq_api.async_get_device_energy_usage(
+            device_id=self.device_id,
+            energy_property=energy_property,
+            period=period,
+            start_date=start_date,
+            end_date=end_date,
         )
-        self._sub_devices: dict[str, ConnectSubDevice] = {}
-        for location_name in self.profiles.locations:
-            _sub_device = sub_device_type(
-                profiles=self.profiles.get_sub_profile(location_name),
-                location_name=self.profiles.get_location_key(location_name),
-                thinq_api=thinq_api,
-                device_id=device_id,
-                device_type=device_type,
-                model_name=model_name,
-                alias=alias,
-                reportable=reportable,
+
+    async def get_monthly_energy_usage(self, energy_property: str, start_date: str, end_date: str) -> dict | None:
+        return await self._get_energy_property_usage(energy_property, USAGE_MONTHLY, start_date, end_date)
+
+    async def get_daily_energy_usage(self, energy_property: str, start_date: str, end_date: str) -> dict | None:
+        return await self._get_energy_property_usage(energy_property, USAGE_DAILY, start_date, end_date)
+
+
+@dataclass
+class ConnectMainDevice(ConnectBaseDevice):
+    SUB_DEVICE_TYPE: ClassVar[type]
+
+    def __post_init__(self, profile):
+        super().__post_init__(profile)
+        if self.SUB_DEVICE_TYPE:
+            self._init_sub_devices()
+
+    def _init_sub_devices(self):
+        for location_name in self._profiles.locations:
+            _sub_device = self.SUB_DEVICE_TYPE(
+                profiles=self._profiles.get_sub_profile(location_name),
+                location_name=self._profiles.get_location_key(location_name),
+                thinq_api=self.thinq_api,
+                device_id=self.device_id,
+                device_type=self.device_type,
+                model_name=self.model_name,
+                alias=self.alias,
+                reportable=self.reportable,
             )
             self._set_sub_device(location_name, _sub_device)
             self._sub_devices[location_name] = _sub_device
@@ -533,35 +583,19 @@ class ConnectMainDevice(ConnectBaseDevice):
             sub_device.update_status(status)
 
 
+@dataclass
 class ConnectSubDevice(ConnectBaseDevice):
-    def __init__(
-        self,
-        profiles: ConnectDeviceProfile,
-        location_name: Location,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        is_single_resource: bool = False,
-    ):
-        super().__init__(thinq_api, device_id, device_type, model_name, alias, reportable, profiles)
-        self._location_name = location_name
-        self._is_single_resource = is_single_resource
-
-    @property
-    def location_name(self) -> str:
-        return self._location_name
+    location_name: Location = ""
+    is_single_resource: bool = field(init=False, default=False)
 
     def _get_location_name_from_status(self, location_status: dict) -> str | None:
-        if self._is_single_resource:
+        if self.is_single_resource:
             return location_status.get("locationName")
         else:
             return location_status.get("location", {}).get("locationName")
 
     def _is_current_location_status(self, location_status: dict) -> bool:
-        return self._get_location_name_from_status(location_status) == self._location_name
+        return self._get_location_name_from_status(location_status) == self.location_name
 
     def _set_status(self, status: list | dict, is_updated: bool = False) -> None:
         if isinstance(status, list):
@@ -571,7 +605,7 @@ class ConnectSubDevice(ConnectBaseDevice):
                 super()._set_status(status=location_status, is_updated=is_updated)
                 return
             return
-        for resource in self.profiles._CUSTOM_RESOURCES:
+        for resource in self._profiles._CUSTOM_RESOURCES:
             for location_status in status.get(resource, []):
                 if not self._is_current_location_status(location_status):
                     continue

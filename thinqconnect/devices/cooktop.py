@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import ConnectDeviceProfile, ConnectMainDevice, ConnectSubDevice
 from .const import Location, Property, Resource
 
@@ -88,25 +88,17 @@ class CooktopProfile(ConnectDeviceProfile):
                 self._set_location_properties(attr_key, _sub_profile.properties)
 
 
+@dataclass
 class CooktopSubDevice(ConnectSubDevice):
     """Cooktop Device Sub."""
-
-    def __init__(
-        self,
-        profiles: CooktopSubProfile,
-        location_name: Location,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-    ):
-        super().__init__(profiles, location_name, thinq_api, device_id, device_type, model_name, alias, reportable)
 
     @property
     def profiles(self) -> CooktopSubProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: CooktopSubProfile):
+        self._profiles = profiles
 
     def _get_command_payload(self):
         return {
@@ -135,34 +127,20 @@ class CooktopSubDevice(ConnectSubDevice):
         return await self._do_custom_range_attribute_command(Property.REMAIN_MINUTE, value)
 
 
+@dataclass
 class CooktopDevice(ConnectMainDevice):
     """Cooktop Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        self._sub_devices: dict[str, CooktopSubDevice] = {}
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=CooktopProfile(profile=profile),
-            sub_device_type=CooktopSubDevice,
-        )
+    PROFILE_TYPE = CooktopProfile
+    SUB_DEVICE_TYPE: type = CooktopSubDevice
 
     @property
     def profiles(self) -> CooktopProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: CooktopProfile):
+        self._profiles = profiles
 
     def get_sub_device(self, location_name: Location) -> CooktopSubDevice:
         return super().get_sub_device(location_name)

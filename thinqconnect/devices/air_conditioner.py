@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
-from typing import Any
+from dataclasses import dataclass
+from typing import Any, ClassVar
 
-from ..thinq_api import ThinQApi
 from .connect_device import READABILITY, WRITABILITY, ConnectBaseDevice, ConnectDeviceProfile
 from .const import Property, Resource
 
@@ -194,10 +194,12 @@ class AirConditionerProfile(ConnectDeviceProfile):
         return readable_props, writable_props
 
 
+@dataclass
 class AirConditionerDevice(ConnectBaseDevice):
     """Air Conditioner Property."""
 
-    _CUSTOM_SET_PROPERTY_NAME = {
+    PROFILE_TYPE = AirConditionerProfile
+    _CUSTOM_SET_PROPERTY_NAME: ClassVar[dict[str, str]] = {
         Property.RELATIVE_HOUR_TO_START: "relative_time_to_start",
         Property.RELATIVE_MINUTE_TO_START: "relative_time_to_start",
         Property.RELATIVE_HOUR_TO_STOP: "relative_time_to_stop",
@@ -210,29 +212,13 @@ class AirConditionerDevice(ConnectBaseDevice):
         Property.SLEEP_TIMER_RELATIVE_MINUTE_TO_STOP: "sleep_timer_relative_time_to_stop",
     }
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=AirConditionerProfile(profile=profile),
-        )
-
     @property
     def profiles(self) -> AirConditionerProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: AirConditionerProfile):
+        self._profiles = profiles
 
     def _set_custom_resources(
         self,

@@ -12,7 +12,9 @@ from collections.abc import Callable
 from typing import Any, Final
 
 from thinqconnect import (
+    PROPERTY_READABLE,
     PROPERTY_WRITABLE,
+    USAGE_MONTHLY,
     AirConditionerDevice,
     AirPurifierDevice,
     AirPurifierFanDevice,
@@ -51,7 +53,7 @@ from thinqconnect import (
 )
 from thinqconnect.devices.const import Location
 
-from .property import ActiveMode, PropertyHolder
+from .property import ActiveMode, PropertyHolder, PropertyOption
 from .specification import (
     CLIMATE_STATE_MAP,
     DEVICE_STATE_MAP,
@@ -129,11 +131,7 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class NotConnectedDeviceError(ThinQAPIException):
-    """The class that represents an not connectd exception for LG ThinQ Connect API."""
-
-
-class NotSupportedFeature(ThinQAPIException):
-    """The class that represents an not connectd exception for LG ThinQ Connect API."""
+    """The class that represents a not connectd exception for LG ThinQ Connect API."""
 
 
 class HABridge:
@@ -168,6 +166,9 @@ class HABridge:
         # The device state. The key is location.
         self.device_state_map: dict[str, DeviceState | None] = {}
 
+        # Oven's mixed control. operation_mode, cook_mode, target_temperature
+        self._mixed_control: dict = {}
+
         self._setup_properties()
         self._setup_states()
 
@@ -197,6 +198,16 @@ class HABridge:
                 self.property_map[idx] = PropertyHolder(
                     key, self.device, profile, location=location
                 )
+
+        # Create energy property holder. (Optional)
+        for key in self.device.energy_properties:
+            idx = self._add_idx(key)
+            self.property_map[idx] = PropertyHolder(
+                key,
+                self.device,
+                {PROPERTY_READABLE: True, PROPERTY_WRITABLE: False},
+                option=PropertyOption(tag="energy"),
+            )
 
     def _setup_states(self) -> None:
         """Set up states of all properties."""
@@ -307,7 +318,9 @@ class HABridge:
             hvac_mode_holder,
             temperature_map,
             spec.default_temperature_preset,
-            support_temperature_range=spec.support_temperature_range,
+            support_temperature_range_holder=self._get_holder(
+                spec.support_temperature_range_key, location
+            ),
             temperature_preset_holder=self._get_holder(
                 spec.temperature_preset_key, location
             ),
@@ -676,6 +689,75 @@ class HABridge:
 
         raise ThinQAPIException("0001", "The control command is not supported.", {})
 
+    async def async_set_cook_mode_with_temperature(
+        self, idx: str, data: Any, unit: str | None = "C"
+    ) -> None:
+        """Set oven operation mode."""
+        location_key = idx.split("_")[0]
+        if location_key in Location:
+            prefix = f"{location_key}_"
+            if idx.startswith(prefix):
+                idx = idx[len(prefix) :]
+        else:
+            raise ThinQAPIException("0001", "Command is not supported.", {})
+
+        _oven_operation_mode = data.upper() if "oven_operation_mode" == idx else None
+        _cook_mode = data.upper() if "cook_mode" == idx else None
+        if "target_temperature" == idx:
+            _target_temperature = data
+            _unit = unit
+        else:
+            _target_temperature = None
+            _unit = None
+        if location_key not in self._mixed_control:
+            self._mixed_control[location_key] = {}
+        if _cook_mode:
+            self._mixed_control[location_key]["cook_mode"] = _cook_mode
+        elif _target_temperature:
+            self._mixed_control[location_key]["target_temperature"] = (
+                _target_temperature
+            )
+            self._mixed_control[location_key]["unit"] = _unit
+        elif _oven_operation_mode:
+            api = self.device.get_sub_device(Location(location_key))
+            if not api:
+                raise ThinQAPIException("0001", "Command is not supported.", {})
+            _LOGGER.debug(
+                "set_cook_mode_with_temperature oven_operation_mode: %s, control: %s",
+                _oven_operation_mode,
+                self._mixed_control,
+            )
+            if _oven_operation_mode == "START":
+                cook_mode = self._mixed_control[location_key].get("cook_mode")
+                target_temp = self._mixed_control[location_key].get(
+                    "target_temperature"
+                )
+                unit = self._mixed_control[location_key].get("unit")
+                self._mixed_control[location_key] = {}
+                if cook_mode and target_temp:
+                    method = (
+                        api.set_cook_mode_with_temperature_f
+                        if unit == "F"
+                        else api.set_cook_mode_with_temperature_c
+                    )
+                    return await method(cook_mode, target_temp)
+                elif cook_mode:
+                    return await api.set_cook_mode(cook_mode)
+                elif target_temp:
+                    method = (
+                        api.set_target_temperature_f
+                        if unit == "F"
+                        else api.set_target_temperature_c
+                    )
+                    return await method(target_temp)
+            else:
+                return await api.set_oven_operation_mode(_oven_operation_mode)
+        _LOGGER.debug(
+            "set_cook_mode_with_temperature oven_operation_mode: %s, control: %s",
+            _oven_operation_mode,
+            self._mixed_control,
+        )
+
     async def async_turn_on(self, idx: str) -> None:
         """Turn on device."""
         await self.post(idx, "POWER_ON")
@@ -800,6 +882,48 @@ class HABridge:
 
         raise ThinQAPIException("0001", "The control command is not supported.", {})
 
+    async def async_get_energy_usage(self, **kwargs: Any) -> dict | None:
+        """Get energy usage."""
+        energy_property = kwargs.get("energy_property")
+        period = kwargs.get("period")
+        start_date = kwargs.get("start_date")
+        end_date = kwargs.get("end_date")
+        not_supported_error = "Command is not supported."
+        if (
+            not self.device.energy_properties
+            or energy_property is None
+            or period is None
+            or start_date is None
+            or end_date is None
+        ):
+            raise ThinQAPIException("0001", not_supported_error, {})
+
+        detail = kwargs.get("detail", False)
+        if period == USAGE_MONTHLY:
+            start = f"{start_date.year}{start_date.month:0>2}"
+            end = f"{end_date.year}{end_date.month:0>2}"
+        else:
+            start = f"{start_date.year}{start_date.month:0>2}{start_date.day:0>2}"
+            end = f"{end_date.year}{end_date.month:0>2}{end_date.day:0>2}"
+
+        data = await self.device.thinq_api.async_get_device_energy_usage(
+            self.device.device_id,
+            energy_property,
+            period,
+            start,
+            end,
+        )
+        if data is None or "result" not in data:
+            raise ThinQAPIException("0001", not_supported_error, {})
+
+        datalist = data["result"]["dataList"]
+        if not detail:
+            value: float = 0.0
+            for data in datalist:
+                value += data.get(energy_property, 0)
+            return value
+        return datalist
+
 
 async def async_get_ha_bridge_list(
     thinq_api: ThinQApi,
@@ -846,8 +970,29 @@ async def _async_create_ha_bridges(
         _LOGGER.error("Cannot create ConnectDevice no profile info:%s", device_info)
         return []
 
-    device_group_id = device_info.get("groupId")
+    # Get a device energy profile from the server.
+    try:
+        energy_profile = await thinq_api.async_get_device_energy_profile(device_id)
+        if "result" not in energy_profile:
+            _LOGGER.debug(
+                "Failed to get energy profile, device=%s, reason=%s",
+                device_id,
+                energy_profile.get("message"),
+            )
+            energy_profile = None
+    except Exception as exc:
+        _LOGGER.debug(
+            "Failed to get energy profile, device=%s, reason=%s", device_id, exc
+        )
+        energy_profile = None
 
+    device_group_id = device_info.get("groupId")
+    _LOGGER.debug(
+        "[%s] profile: %s, energy_profile: %s",
+        device_info.get("alias"),
+        profile,
+        energy_profile,
+    )
     # Create new device api instance.
     try:
         connect_device: ConnectBaseDevice = (
@@ -860,6 +1005,7 @@ async def _async_create_ha_bridges(
                 group_id=device_group_id,
                 reportable=device_info.get("reportable"),
                 profile=profile,
+                energy_profile=energy_profile,
             )
             if device_group_id
             else constructor(
@@ -870,6 +1016,7 @@ async def _async_create_ha_bridges(
                 alias=device_info.get("alias"),
                 reportable=device_info.get("reportable"),
                 profile=profile,
+                energy_profile=energy_profile,
             )
         )
     except Exception:

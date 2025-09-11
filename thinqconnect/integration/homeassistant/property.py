@@ -36,7 +36,9 @@ class ActiveMode(Enum):
 class PropertyOption:
     """A class tha contains options for creating property holder."""
 
-    alt_setter: Callable[[ConnectBaseDevice, Any], Awaitable[None]] | None = None
+    alt_getter: Callable[[PropertyHolder], Any] | None = None
+    alt_setter: Callable[[PropertyHolder, Any], Awaitable[None]] | None = None
+    tag: str | None = None
 
 
 class PropertyHolder:
@@ -66,6 +68,7 @@ class PropertyHolder:
         self.option = option or PropertyOption()
         self.data_type = self.profile.get("type")
         self.rw_mode: str | None = None
+        self.tag = self.option.tag
 
     @property
     def options(self) -> list[str] | None:
@@ -171,7 +174,12 @@ class PropertyHolder:
 
     def get_value(self) -> Any:
         """Return the value of property."""
-        status = self.api.get_status(self.key)  # type: ignore[arg-type]
+        status: Any = None
+        if self.option.alt_getter is not None:
+            status = self.option.alt_getter(self)
+        else:
+            status = self.api.get_status(self.key)  # type: ignore[arg-type]
+
         if status is None:
             return None
 
@@ -201,7 +209,7 @@ class PropertyHolder:
         value = self._convert_value(value)
 
         if self.option.alt_setter is not None:
-            await self.option.alt_setter(self.api, value)
+            await self.option.alt_setter(self, value)
         elif self.setter is not None:
             await self.setter(value)
 

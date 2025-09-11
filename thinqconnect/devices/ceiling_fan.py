@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import ConnectBaseDevice, ConnectDeviceProfile
 from .const import Property, Resource
 
@@ -23,32 +23,19 @@ class CeilingFanProfile(ConnectDeviceProfile):
         )
 
 
+@dataclass
 class CeilingFanDevice(ConnectBaseDevice):
     """CeilingFan Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=CeilingFanProfile(profile=profile),
-        )
+    PROFILE_TYPE = CeilingFanProfile
 
     @property
     def profiles(self) -> CeilingFanProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: CeilingFanProfile):
+        self._profiles = profiles
 
     async def set_wind_strength(self, wind_strength: str) -> dict | None:
         return await self.do_enum_attribute_command(Property.WIND_STRENGTH, wind_strength)

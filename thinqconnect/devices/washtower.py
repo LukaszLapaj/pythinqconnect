@@ -2,9 +2,9 @@
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import ConnectBaseDevice, ConnectDeviceProfile
 from .const import Location, Property
 from .dryer import DryerDevice, DryerProfile
@@ -61,48 +61,43 @@ class DryerDeviceSingle(DryerDevice):
         return await self._do_attribute_command({"dryer": {**payload}})
 
 
+@dataclass
 class WashtowerDevice(ConnectBaseDevice):
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=WashTowerProfile(profile=profile),
-        )
+    PROFILE_TYPE = WashTowerProfile
+
+    def __post_init__(self, profile):
+        super().__post_init__(profile)
+
         self._sub_devices: dict[str, WasherDeviceSingle | DryerDeviceSingle] = {}
         self.dryer = DryerDeviceSingle(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
+            thinq_api=self.thinq_api,
+            device_id=self.device_id,
+            device_type=self.device_type,
+            model_name=self.model_name,
+            alias=self.alias,
+            reportable=self.reportable,
             profile=profile.get("dryer"),
         )
         self.washer = WasherDeviceSingle(
-            single_unit=True,
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
+            thinq_api=self.thinq_api,
+            device_id=self.device_id,
+            device_type=self.device_type,
+            model_name=self.model_name,
+            alias=self.alias,
+            reportable=self.reportable,
             profiles=self.profiles.get_sub_profile("washer"),
+            location_name="washer",
         )
         self._sub_devices["dryer"] = self.dryer
         self._sub_devices["washer"] = self.washer
+
+    @property
+    def profiles(self) -> WashTowerProfile:
+        return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: WashTowerProfile):
+        self._profiles = profiles
 
     def set_status(self, status: dict) -> None:
         super().set_status(status)

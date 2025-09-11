@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import READABILITY, WRITABILITY, ConnectBaseDevice, ConnectDeviceProfile
 from .const import Property, Resource
 
@@ -133,32 +133,19 @@ class SystemBoilerProfile(ConnectDeviceProfile):
         return readable_props, writable_props
 
 
+@dataclass
 class SystemBoilerDevice(ConnectBaseDevice):
     """SystemBoiler Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=SystemBoilerProfile(profile=profile),
-        )
+    PROFILE_TYPE = SystemBoilerProfile
 
     @property
     def profiles(self) -> SystemBoilerProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: SystemBoilerProfile):
+        self._profiles = profiles
 
     def _set_custom_resources(
         self,

@@ -148,7 +148,7 @@ async def test_devices_list():
     async with ClientSession() as session:
         thinq_api = ThinQApi(session=session, access_token='your_personal_access_token', country_code='your_contry_code', client_id='your_client_id')
         response = await thinq_api.async_get_device_list()
-        print("device_list : %s", response.body)
+        print("device_list : %s", response)
 
 asyncio.run(test_devices_list())
 ```
@@ -320,7 +320,8 @@ For detailed information on Device Properties, please refer to the following pag
 |  1 | operation               | dehumidifier\_operation\_mode |
 |  2 | dehumidifier\_job\_mode | current\_job\_mode            |
 |  3 | humidity                | current\_humidity             |
-|  4 | air\_flow               | wind\_strength                |
+|  4 | humidity                | target\_humidity              |
+|  5 | air\_flow               | wind\_strength                |
 
 
 ### DEVICE\_DISH\_WASHER
@@ -519,18 +520,23 @@ Empty
 
 ### Main
 
-|    | resources           | properties                |
-|----|---------------------|---------------------------|
-|  1 | power\_save         | power\_save\_enabled      |
-|  2 | eco\_friendly       | eco\_friendly\_mode       |
-|  3 | sabbath             | sabbath\_mode             |
-|  4 | refrigeration       | rapid\_freeze             |
-|  5 | refrigeration       | express\_mode             |
-|  6 | refrigeration       | express\_mode\_name       |
-|  7 | refrigeration       | express\_fridge           |
-|  8 | refrigeration       | fresh\_air\_filter        |
-|  9 | water\_filter\_info | used\_time                |
-| 10 | water\_filter\_info | water\_filter\_info\_unit |
+|    | resources           | properties                          |
+|----|---------------------|-------------------------------------|
+|  1 | power\_save         | power\_save\_enabled                |
+|  2 | eco\_friendly       | eco\_friendly\_mode                 |
+|  3 | sabbath             | sabbath\_mode                       |
+|  4 | refrigeration       | rapid\_freeze                       |
+|  5 | refrigeration       | express\_mode                       |
+|  6 | refrigeration       | express\_mode\_name                 |
+|  7 | refrigeration       | express\_fridge                     |
+|  8 | refrigeration       | fresh\_air\_filter                  |
+|  9 | refrigeration       | fresh\_air\_filter\_remain\_percent |
+| 10 | water\_filter\_info | used\_time                          |
+| 11 | water\_filter\_info | water\_filter\_info\_unit           |
+| 12 | water\_filter\_info | water\_filter\_state                |
+| 13 | water\_filter\_info | water\_filter\_1\_remain\_percent   |
+| 14 | water\_filter\_info | water\_filter\_2\_remain\_percent   |
+| 15 | water\_filter\_info | water\_filter\_3\_remain\_percent   |
 
 
 ### Sub

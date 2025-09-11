@@ -5,30 +5,22 @@ from __future__ import annotations
     * SPDX-License-Identifier: Apache-2.0
 """
 """class for base device"""
+from dataclasses import dataclass
 
 from .thinq_api import ThinQApi
 
 
+@dataclass
 class BaseDevice:
     """The base implementation of LG ThinQ Device."""
 
     thinq_api: ThinQApi
-
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-    ):
-        self.thinq_api = thinq_api
-        self.device_id = device_id
-        self.device_type = device_type
-        self.model_name = model_name
-        self.alias = alias
-        self.reportable = reportable
+    device_id: str
+    device_type: str
+    model_name: str
+    alias: str
+    reportable: bool
+    group_id: str
 
     @property
     def device_type(self) -> str:
@@ -69,3 +61,11 @@ class BaseDevice:
     @device_id.setter
     def device_id(self, device_id: str):
         self._device_id = device_id
+
+    @property
+    def group_id(self) -> str:
+        return self._group_id
+
+    @group_id.setter
+    def group_id(self, value: str):
+        self._group_id = value

@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import ConnectBaseDevice, ConnectDeviceProfile
 from .const import Property, Resource
 
@@ -30,29 +30,16 @@ class StickCleanerProfile(ConnectDeviceProfile):
         )
 
 
+@dataclass
 class StickCleanerDevice(ConnectBaseDevice):
     """StickCleaner Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=StickCleanerProfile(profile=profile),
-        )
+    PROFILE_TYPE = StickCleanerProfile
 
     @property
     def profiles(self) -> StickCleanerProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: StickCleanerProfile):
+        self._profiles = profiles

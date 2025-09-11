@@ -7,8 +7,8 @@
 
 from collections import deque
 from collections.abc import Awaitable, Callable, Iterable
-from typing import Any
 from datetime import time
+from typing import Any
 
 from thinqconnect import ConnectBaseDevice, ThinQAPIException
 from thinqconnect.devices.const import Property as ThinQProperty
@@ -18,8 +18,8 @@ from .temperature import (
     ClimateTemperatureHelper,
     ClimateTemperatureMap,
     TemperatureGroup,
-    TemperatureHvacMap,
     TemperatureHelper,
+    TemperatureHvacMap,
 )
 
 
@@ -40,7 +40,6 @@ class PropertyState:
         self.hvac_mode: str = "off"
         self.fan_mode: str | None = None
         self.humidity: int | None = None
-        self.support_temperature_range: bool = False
         self.current_state: str | None = None
         self.battery: str | None = None
         self.job_mode: str | None = None
@@ -405,7 +404,7 @@ class ClimatePropertyState(PropertyState):
         climate_temperature_map: ClimateTemperatureMap,
         default_temperature_preset: str,
         *,
-        support_temperature_range: bool = False,
+        support_temperature_range_holder: PropertyHolder | None = None,
         temperature_preset_holder: PropertyHolder | None = None,
         temperature_sub_preset_holder: PropertyHolder | None = None,
         fan_mode_holder: PropertyHolder | None = None,
@@ -420,7 +419,7 @@ class ClimatePropertyState(PropertyState):
         self.power_holder = power_holder
         self.hvac_mode_holder = hvac_mode_holder
         self.default_temperature_preset = default_temperature_preset
-        self.support_temperature_range = support_temperature_range
+        self.support_temperature_range_holder = support_temperature_range_holder
         self.temperature_preset_holder = temperature_preset_holder
         self.temperature_sub_preset_holder = temperature_sub_preset_holder
         self.fan_mode_holder = fan_mode_holder
@@ -628,6 +627,13 @@ class ClimatePropertyState(PropertyState):
             return []
 
         return self.swing_horizontal_mode_holder.options or []
+
+    @property
+    def support_temperature_range(self) -> bool:
+        """Return the support temperature range."""
+        if self.support_temperature_range_holder is None:
+            return False
+        return self.support_temperature_range_holder.get_value_as_bool()
 
     def _update_mode(self) -> None:
         """Update mode and all helpers."""

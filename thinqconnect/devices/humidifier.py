@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import ConnectBaseDevice, ConnectDeviceProfile
 from .const import Property, Resource
 
@@ -73,7 +73,9 @@ class HumidifierProfile(ConnectDeviceProfile):
         )
 
 
+@dataclass
 class HumidifierDevice(ConnectBaseDevice):
+    PROFILE_TYPE = HumidifierProfile
     _CUSTOM_SET_PROPERTY_NAME = {
         Property.ABSOLUTE_HOUR_TO_START: "absolute_time_to_start",
         Property.ABSOLUTE_MINUTE_TO_START: "absolute_time_to_start",
@@ -83,29 +85,13 @@ class HumidifierDevice(ConnectBaseDevice):
         Property.SLEEP_TIMER_RELATIVE_MINUTE_TO_STOP: "sleep_timer_relative_time_to_stop",
     }
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=HumidifierProfile(profile=profile),
-        )
-
     @property
     def profiles(self) -> HumidifierProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: HumidifierProfile):
+        self._profiles = profiles
 
     async def set_current_job_mode(self, job_mode: str) -> dict | None:
         return await self.do_enum_attribute_command(Property.CURRENT_JOB_MODE, job_mode)

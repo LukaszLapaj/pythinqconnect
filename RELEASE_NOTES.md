@@ -1,5 +1,15 @@
 # Release Notes
 
+## 1.0.8 (2025-09-11)
+### Features
+* Support historical **energy consumption** metrics for individual devices
+* Add **filter remain percent** and **water filter state** properties (refrigerator)
+* Add **target humidity** property (dehumidifier)
+### Improvements
+* Support extended **wind strength** levels (dehumidifier)
+### Fixes
+* Resolve incorrect behavior when controlling **cook mode** or **target temperature** (oven)
+
 ## 1.0.7 (2025-06-18)
 ### Features
 * Add **auto target temperature, min target temperature, max target temperature** properties (air_conditioner)

@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import (
     READABILITY,
     WRITABILITY,
@@ -98,10 +98,15 @@ class RefrigeratorProfile(ConnectDeviceProfile):
                     "expressModeName": Property.EXPRESS_MODE_NAME,
                     "expressFridge": Property.EXPRESS_FRIDGE,
                     "freshAirFilter": Property.FRESH_AIR_FILTER,
+                    "freshAirFilterRemainPercent": Property.FRESH_AIR_FILTER_REMAIN_PERCENT,
                 },
                 "waterFilterInfo": {
                     "usedTime": Property.USED_TIME,
                     "unit": Property.WATER_FILTER_INFO_UNIT,
+                    "waterFilterState": Property.WATER_FILTER_STATE,
+                    "waterFilter1RemainPercent": Property.WATER_FILTER_1_REMAIN_PERCENT,
+                    "waterFilter2RemainPercent": Property.WATER_FILTER_2_REMAIN_PERCENT,
+                    "waterFilter3RemainPercent": Property.WATER_FILTER_3_REMAIN_PERCENT,
                 },
             },
         )
@@ -131,35 +136,19 @@ class RefrigeratorProfile(ConnectDeviceProfile):
                 return key
 
 
+@dataclass
 class RefrigeratorSubDevice(ConnectSubDevice):
     """Refrigerator Device Sub."""
 
-    def __init__(
-        self,
-        profiles: RefrigeratorSubProfile,
-        location_name: Location,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-    ):
-        super().__init__(
-            profiles,
-            location_name,
-            thinq_api,
-            device_id,
-            device_type,
-            model_name,
-            alias,
-            reportable,
-            is_single_resource=True,
-        )
+    is_single_resource: bool = True
 
     @property
     def profiles(self) -> RefrigeratorSubProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: RefrigeratorSubProfile):
+        self._profiles = profiles
 
     def _set_custom_resources(
         self,
@@ -182,7 +171,7 @@ class RefrigeratorSubDevice(ConnectSubDevice):
         _payload = self.profiles.get_range_attribute_payload(_target_temperature_key, temperature)
         _payload[_resource_key] = dict(
             {
-                "locationName": self._location_name,
+                "locationName": self.location_name,
             },
             **(_payload[_resource_key]),
         )
@@ -195,34 +184,20 @@ class RefrigeratorSubDevice(ConnectSubDevice):
         return await self._set_target_temperature(temperature, "F")
 
 
+@dataclass
 class RefrigeratorDevice(ConnectMainDevice):
     """Refrigerator Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        self._sub_devices: dict[str, RefrigeratorSubDevice] = {}
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=RefrigeratorProfile(profile=profile),
-            sub_device_type=RefrigeratorSubDevice,
-        )
+    PROFILE_TYPE = RefrigeratorProfile
+    SUB_DEVICE_TYPE: type = RefrigeratorSubDevice
 
     @property
     def profiles(self) -> RefrigeratorProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: RefrigeratorProfile):
+        self._profiles = profiles
 
     def get_sub_device(self, location_name: Location) -> RefrigeratorSubDevice:
         return super().get_sub_device(location_name)

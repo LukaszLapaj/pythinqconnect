@@ -4,9 +4,8 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
-from typing import Any
+from typing import Any, ClassVar
 
-from ..thinq_api import ThinQApi
 from .connect_device import READABILITY, WRITABILITY, ConnectBaseDevice, ConnectDeviceProfile
 from .const import Property, Resource
 
@@ -77,10 +76,15 @@ class VentilatorProfile(ConnectDeviceProfile):
         return readable_props, writable_props
 
 
+from dataclasses import dataclass
+
+
+@dataclass
 class VentilatorDevice(ConnectBaseDevice):
     """Ventilator Property."""
 
-    _CUSTOM_SET_PROPERTY_NAME = {
+    PROFILE_TYPE = VentilatorProfile
+    _CUSTOM_SET_PROPERTY_NAME: ClassVar[dict[str, str]] = {
         Property.RELATIVE_HOUR_TO_START: "relative_time_to_start",
         Property.RELATIVE_MINUTE_TO_START: "relative_time_to_start",
         Property.RELATIVE_HOUR_TO_STOP: "relative_time_to_stop",
@@ -93,29 +97,13 @@ class VentilatorDevice(ConnectBaseDevice):
         Property.SLEEP_TIMER_RELATIVE_MINUTE_TO_STOP: "sleep_timer_relative_time_to_stop",
     }
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=VentilatorProfile(profile=profile),
-        )
-
     @property
     def profiles(self) -> VentilatorProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: VentilatorProfile):
+        self._profiles = profiles
 
     async def set_current_job_mode(self, job_mode: str) -> dict | None:
         return await self.do_enum_attribute_command(Property.CURRENT_JOB_MODE, job_mode)

@@ -4,10 +4,10 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
-from typing import Any
+from dataclasses import dataclass, field
+from typing import Any, ClassVar
 
 from ..const import PROPERTY_READABLE
-from ..thinq_api import ThinQApi
 from .connect_device import (
     READABILITY,
     WRITABILITY,
@@ -134,33 +134,28 @@ class OvenSubProfile(ConnectSubDeviceProfile):
             super().generate_properties(location_property)
 
 
+@dataclass
 class OvenSubDevice(ConnectSubDevice):
     """Oven Device Sub."""
 
-    _CUSTOM_SET_PROPERTY_NAME = {
+    _CUSTOM_SET_PROPERTY_NAME: ClassVar[dict[str, str]] = {
         Property.TARGET_HOUR: "target_time",
         Property.TARGET_MINUTE: "target_time",
         Property.TIMER_HOUR: "timer",
         Property.TIMER_MINUTE: "timer",
     }
 
-    def __init__(
-        self,
-        profiles: OvenSubProfile,
-        location_name: Location,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-    ):
-        super().__init__(profiles, location_name, thinq_api, device_id, device_type, model_name, alias, reportable)
-        self._temp_unit = None
+    _EXTEND_SET_FN_NAME: ClassVar[list] = ["set_cook_mode_with_temperature_c", "set_cook_mode_with_temperature_f"]
+
+    _temp_unit: str | None = field(init=False, default=None)
 
     @property
     def profiles(self) -> OvenSubProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: OvenSubProfile):
+        self._profiles = profiles
 
     @property
     def remain_time(self) -> dict:
@@ -222,16 +217,31 @@ class OvenSubDevice(ConnectSubDevice):
 
     async def set_oven_operation_mode(self, mode: str) -> dict | None:
         payload = self.profiles.get_enum_attribute_payload("oven_operation_mode", mode)
-        return await self._do_attribute_command({"location": {"locationName": self._location_name}, **payload})
+        return await self._do_attribute_command({"location": {"locationName": self.location_name}, **payload})
 
     async def set_cook_mode(self, mode: str) -> dict | None:
-        payload = self.profiles.get_enum_attribute_payload("cook_mode", mode)
-        return await self._do_attribute_command({"location": {"locationName": self._location_name}, **payload})
+        payload = self.profiles.get_enum_attribute_payload("oven_operation_mode", "START")
+        cook_mode_payload = self.profiles.get_enum_attribute_payload("cook_mode", mode)
+        return await self._do_attribute_command(
+            {"location": {"locationName": self.location_name}, **payload, **cook_mode_payload}
+        )
 
-    async def _set_target_temperature(self, target_temperature: int | float, unit: str) -> dict | None:
+    async def set_cook_mode_with_temperature_f(self, mode: str, target_temperature: int | float) -> dict | None:
+        return await self._set_target_temperature(target_temperature, "F", mode)
+
+    async def set_cook_mode_with_temperature_c(self, mode: str, target_temperature: int | float) -> dict | None:
+        return await self._set_target_temperature(target_temperature, "C", mode)
+
+    async def _set_target_temperature(
+        self, target_temperature: int | float, unit: str, mode: str | None = None
+    ) -> dict | None:
+        payload = self.profiles.get_enum_attribute_payload("oven_operation_mode", "START")
+        cook_mode_payload = self.profiles.get_enum_attribute_payload("cook_mode", mode) if mode else {}
         temperature_map = self.profiles._PROFILE["temperature"]
-        payload = self.profiles.get_range_attribute_payload(temperature_map.get(unit), target_temperature)
-        return await self._do_attribute_command({"location": {"locationName": self._location_name}, **payload})
+        temperature_payload = self.profiles.get_range_attribute_payload(temperature_map.get(unit), target_temperature)
+        return await self._do_attribute_command(
+            {"location": {"locationName": self.location_name}, **payload, **cook_mode_payload, **temperature_payload}
+        )
 
     async def set_target_temperature_f(self, target_temperature: int | float) -> dict | None:
         return await self._set_target_temperature(target_temperature, "F")
@@ -246,7 +256,7 @@ class OvenSubDevice(ConnectSubDevice):
         for key, sub_dict in target_minute_payload.items():
             target_time_payload[key].update(sub_dict)
         return await self._do_attribute_command(
-            {"location": {"locationName": self._location_name}, **payload, **target_time_payload}
+            {"location": {"locationName": self.location_name}, **payload, **target_time_payload}
         )
 
     async def set_timer(self, hour: int, minute: int) -> dict | None:
@@ -258,35 +268,24 @@ class OvenSubDevice(ConnectSubDevice):
         )
 
 
+@dataclass
 class OvenDevice(ConnectMainDevice):
     """Oven Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        self._sub_devices: dict[str, OvenSubDevice] = {}
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=OvenProfile(profile=profile),
-            sub_device_type=OvenSubDevice,
-        )
+    PROFILE_TYPE = OvenProfile
+    SUB_DEVICE_TYPE: type = OvenSubDevice
+
+    def __post_init__(self, profile):
+        super().__post_init__(profile)
         self.oven_type = self.profiles.get_property("oven_type").get(PROPERTY_READABLE, [None])[0]
 
     @property
     def profiles(self) -> OvenProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: OvenProfile):
+        self._profiles = profiles
 
     def get_sub_device(self, location_name: Location) -> OvenSubDevice:
         return super().get_sub_device(location_name)

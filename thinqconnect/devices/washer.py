@@ -4,9 +4,9 @@ from __future__ import annotations
     * SPDX-FileCopyrightText: Copyright 2024 LG Electronics Inc.
     * SPDX-License-Identifier: Apache-2.0
 """
+from dataclasses import dataclass
 from typing import Any
 
-from ..thinq_api import ThinQApi
 from .connect_device import ConnectDeviceProfile, ConnectMainDevice, ConnectSubDevice, ConnectSubDeviceProfile
 from .const import Location, Property, Resource
 
@@ -72,26 +72,17 @@ class WasherSubProfile(ConnectSubDeviceProfile):
             super().generate_properties(property)
 
 
+@dataclass
 class WasherSubDevice(ConnectSubDevice):
     """Washer Device Sub."""
-
-    def __init__(
-        self,
-        profiles: WasherSubProfile,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        location_name: Location = None,
-        single_unit: bool = False,
-    ):
-        super().__init__(profiles, location_name, thinq_api, device_id, device_type, model_name, alias, reportable)
 
     @property
     def profiles(self) -> WasherSubProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: WasherSubProfile):
+        self._profiles = profiles
 
     @property
     def remain_time(self) -> dict:
@@ -123,45 +114,31 @@ class WasherSubDevice(ConnectSubDevice):
 
     async def set_washer_operation_mode(self, mode: str) -> dict | None:
         payload = self.profiles.get_enum_attribute_payload(Property.WASHER_OPERATION_MODE, mode)
-        return await self._do_attribute_command({"location": {"locationName": self._location_name}, **payload})
+        return await self._do_attribute_command({"location": {"locationName": self.location_name}, **payload})
 
     async def set_relative_hour_to_start(self, hour: str) -> dict | None:
         payload = self.profiles.get_range_attribute_payload(Property.RELATIVE_HOUR_TO_START, hour)
-        return await self._do_attribute_command({"location": {"locationName": self._location_name}, **payload})
+        return await self._do_attribute_command({"location": {"locationName": self.location_name}, **payload})
 
     async def set_relative_hour_to_stop(self, hour: str) -> dict | None:
         payload = self.profiles.get_range_attribute_payload(Property.RELATIVE_HOUR_TO_STOP, hour)
-        return await self._do_attribute_command({"location": {"locationName": self._location_name}, **payload})
+        return await self._do_attribute_command({"location": {"locationName": self.location_name}, **payload})
 
 
+@dataclass
 class WasherDevice(ConnectMainDevice):
     """Washer Property."""
 
-    def __init__(
-        self,
-        thinq_api: ThinQApi,
-        device_id: str,
-        device_type: str,
-        model_name: str,
-        alias: str,
-        reportable: bool,
-        profile: dict[str, Any],
-    ):
-        self._sub_devices: dict[str, WasherSubDevice] = {}
-        super().__init__(
-            thinq_api=thinq_api,
-            device_id=device_id,
-            device_type=device_type,
-            model_name=model_name,
-            alias=alias,
-            reportable=reportable,
-            profiles=WasherProfile(profile=profile),
-            sub_device_type=WasherSubDevice,
-        )
+    PROFILE_TYPE = WasherProfile
+    SUB_DEVICE_TYPE: type = WasherSubDevice
 
     @property
     def profiles(self) -> WasherProfile:
         return self._profiles
+
+    @profiles.setter
+    def profiles(self, profiles: WasherProfile):
+        self._profiles = profiles
 
     def get_sub_device(self, location_name: Location) -> WasherSubDevice:
         return super().get_sub_device(location_name)
