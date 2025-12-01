@@ -209,7 +209,7 @@ class PropertyHolder:
         value = self._convert_value(value)
 
         if self.option.alt_setter is not None:
-            await self.option.alt_setter(self, value)
+            await self.option.alt_setter(self.api, value)
         elif self.setter is not None:
             await self.setter(value)
 

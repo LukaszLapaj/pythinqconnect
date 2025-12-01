@@ -1,5 +1,12 @@
 # Release Notes
 
+## 1.0.9 (2025-12-01)
+### Features
+* Add **sleep timer** properties (air_purifier)
+### Fixes
+* Fix **TURN_ON/TURN_OFF** commands failing with error when device is already in POWER_ON/POWER_OFF state (home_assistant)
+
+
 ## 1.0.8 (2025-09-11)
 ### Features
 * Support historical **energy consumption** metrics for individual devices

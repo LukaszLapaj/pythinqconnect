@@ -760,11 +760,21 @@ class HABridge:
 
     async def async_turn_on(self, idx: str) -> None:
         """Turn on device."""
-        await self.post(idx, "POWER_ON")
+        try:
+            await self.post(idx, "POWER_ON")
+        except ThinQAPIException as e:
+            if e.code != ThinQAPIErrorCodes.COMMAND_NOT_SUPPORTED_IN_STATE:
+                # Prevent 'Command not supported in POWER_ON', 'code': '2302'
+                raise
 
     async def async_turn_off(self, idx: str) -> None:
         """Turn off device."""
-        await self.post(idx, "POWER_OFF")
+        try:
+            await self.post(idx, "POWER_OFF")
+        except ThinQAPIException as e:
+            if e.code != ThinQAPIErrorCodes.COMMAND_NOT_SUPPORTED_IN_POWER_OFF:
+                # Prevent 'Command not supported in POWER_OFF', 'code': '2304'
+                raise
 
     async def async_set_target_temperature(self, idx: str, value: float) -> None:
         """Set target temperature."""

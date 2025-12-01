@@ -19,6 +19,7 @@ class AirPurifierProfile(ConnectDeviceProfile):
                 "airPurifierJobMode": Resource.AIR_PURIFIER_JOB_MODE,
                 "operation": Resource.OPERATION,
                 "timer": Resource.TIMER,
+                "sleepTimer": Resource.SLEEP_TIMER,
                 "airFlow": Resource.AIR_FLOW,
                 "airQualitySensor": Resource.AIR_QUALITY_SENSOR,
                 "filterInfo": Resource.FILTER_INFO,
@@ -34,6 +35,10 @@ class AirPurifierProfile(ConnectDeviceProfile):
                     "absoluteMinuteToStart": Property.ABSOLUTE_MINUTE_TO_START,
                     "absoluteHourToStop": Property.ABSOLUTE_HOUR_TO_STOP,
                     "absoluteMinuteToStop": Property.ABSOLUTE_MINUTE_TO_STOP,
+                },
+                "sleepTimer": {
+                    "relativeHourToStop": Property.SLEEP_TIMER_RELATIVE_HOUR_TO_STOP,
+                    "relativeMinuteToStop": Property.SLEEP_TIMER_RELATIVE_MINUTE_TO_STOP,
                 },
                 "airFlow": {
                     "windStrength": Property.WIND_STRENGTH,
@@ -65,6 +70,8 @@ class AirPurifierDevice(ConnectBaseDevice):
         Property.ABSOLUTE_MINUTE_TO_START: "absolute_time_to_start",
         Property.ABSOLUTE_HOUR_TO_STOP: "absolute_time_to_stop",
         Property.ABSOLUTE_MINUTE_TO_STOP: "absolute_time_to_stop",
+        Property.SLEEP_TIMER_RELATIVE_HOUR_TO_STOP: "sleep_timer_relative_time_to_stop",
+        Property.SLEEP_TIMER_RELATIVE_MINUTE_TO_STOP: "sleep_timer_relative_time_to_stop",
     }
 
     @property
@@ -96,6 +103,9 @@ class AirPurifierDevice(ConnectBaseDevice):
                 Property.ABSOLUTE_MINUTE_TO_STOP: minute,
             }
         )
+
+    async def set_sleep_timer_relative_time_to_stop(self, hour: int) -> dict | None:
+        return await self.do_attribute_command(Property.SLEEP_TIMER_RELATIVE_HOUR_TO_STOP, hour)
 
     async def set_wind_strength(self, wind_strength: str) -> dict | None:
         return await self.do_enum_attribute_command(Property.WIND_STRENGTH, wind_strength)

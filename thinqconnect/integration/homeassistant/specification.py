@@ -498,7 +498,7 @@ async def set_sleep_timer_relative_hour_to_stop(
     """Set a relative stop sleep timer with hour."""
     if isinstance(device, (AirConditionerDevice, HumidifierDevice, VentilatorDevice)):
         await device.set_sleep_timer_relative_time_to_stop(hour=value, minute=0)
-    elif isinstance(device, AirPurifierFanDevice):
+    elif isinstance(device, (AirPurifierDevice, AirPurifierFanDevice)):
         await device.set_sleep_timer_relative_time_to_stop(hour=value)
 
 
