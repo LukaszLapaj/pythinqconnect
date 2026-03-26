@@ -83,7 +83,9 @@ class AirConditionerProfile(ConnectDeviceProfile):
                     "powerSaveEnabled": Property.POWER_SAVE_ENABLED,
                 },
                 "airFlow": {
-                    "windStrength": Property.WIND_STRENGTH,
+                    self._get_preferred_property_key(
+                        profile, "airFlow", ["windStrengthDetail", "windStrength"]
+                    ): Property.WIND_STRENGTH,
                     "windStep": Property.WIND_STEP,
                 },
                 "airQualitySensor": {

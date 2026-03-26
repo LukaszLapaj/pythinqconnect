@@ -41,13 +41,18 @@ class AirPurifierProfile(ConnectDeviceProfile):
                     "relativeMinuteToStop": Property.SLEEP_TIMER_RELATIVE_MINUTE_TO_STOP,
                 },
                 "airFlow": {
-                    "windStrength": Property.WIND_STRENGTH,
+                    self._get_preferred_property_key(
+                        profile, "airFlow", ["windStrengthDetail", "windStrength"]
+                    ): Property.WIND_STRENGTH,
                 },
                 "airQualitySensor": {
                     "monitoringEnabled": Property.MONITORING_ENABLED,
                     "PM1": Property.PM1,
+                    "PM1Level": Property.PM1_LEVEL,
                     "PM2": Property.PM2,
+                    "PM2Level": Property.PM2_LEVEL,
                     "PM10": Property.PM10,
+                    "PM10Level": Property.PM10_LEVEL,
                     "odor": Property.ODOR,
                     "odorLevel": Property.ODOR_LEVEL,
                     "humidity": Property.HUMIDITY,

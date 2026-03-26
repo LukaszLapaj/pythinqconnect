@@ -226,27 +226,32 @@ For detailed information on Device Properties, please refer to the following pag
 
 ### Main
 
-|    | resources                | properties                     |
-|----|--------------------------|--------------------------------|
-|  1 | air\_purifier\_job\_mode | current\_job\_mode             |
-|  2 | air\_purifier\_job\_mode | personalization\_mode          |
-|  3 | operation                | air\_purifier\_operation\_mode |
-|  4 | timer                    | absolute\_hour\_to\_start      |
-|  5 | timer                    | absolute\_minute\_to\_start    |
-|  6 | timer                    | absolute\_hour\_to\_stop       |
-|  7 | timer                    | absolute\_minute\_to\_stop     |
-|  8 | air\_flow                | wind\_strength                 |
-|  9 | air\_quality\_sensor     | monitoring\_enabled            |
-| 10 | air\_quality\_sensor     | pm1                            |
-| 11 | air\_quality\_sensor     | pm2                            |
-| 12 | air\_quality\_sensor     | pm10                           |
-| 13 | air\_quality\_sensor     | odor                           |
-| 14 | air\_quality\_sensor     | odor\_level                    |
-| 15 | air\_quality\_sensor     | humidity                       |
-| 16 | air\_quality\_sensor     | total\_pollution               |
-| 17 | air\_quality\_sensor     | total\_pollution\_level        |
-| 18 | filter\_info             | top\_filter\_remain\_percent   |
-| 19 | filter\_info             | filter\_remain\_percent        |
+|    | resources                | properties                               |
+|----|--------------------------|------------------------------------------|
+|  1 | air\_purifier\_job\_mode | current\_job\_mode                       |
+|  2 | air\_purifier\_job\_mode | personalization\_mode                    |
+|  3 | operation                | air\_purifier\_operation\_mode           |
+|  4 | timer                    | absolute\_hour\_to\_start                |
+|  5 | timer                    | absolute\_minute\_to\_start              |
+|  6 | timer                    | absolute\_hour\_to\_stop                 |
+|  7 | timer                    | absolute\_minute\_to\_stop               |
+|  8 | sleep\_timer             | sleep\_timer\_relative\_hour\_to\_stop   |
+|  9 | sleep\_timer             | sleep\_timer\_relative\_minute\_to\_stop |
+| 10 | air\_flow                | wind\_strength                           |
+| 11 | air\_quality\_sensor     | monitoring\_enabled                      |
+| 12 | air\_quality\_sensor     | pm1                                      |
+| 13 | air\_quality\_sensor     | pm1\_level                               |
+| 14 | air\_quality\_sensor     | pm2                                      |
+| 15 | air\_quality\_sensor     | pm2\_level                               |
+| 16 | air\_quality\_sensor     | pm10                                     |
+| 17 | air\_quality\_sensor     | pm10\_level                              |
+| 18 | air\_quality\_sensor     | odor                                     |
+| 19 | air\_quality\_sensor     | odor\_level                              |
+| 20 | air\_quality\_sensor     | humidity                                 |
+| 21 | air\_quality\_sensor     | total\_pollution                         |
+| 22 | air\_quality\_sensor     | total\_pollution\_level                  |
+| 23 | filter\_info             | top\_filter\_remain\_percent             |
+| 24 | filter\_info             | filter\_remain\_percent                  |
 
 
 ### DEVICE\_AIR\_PURIFIER\_FAN

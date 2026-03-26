@@ -316,6 +316,14 @@ class ConnectDeviceProfile:
             raise ValueError(f"Not support {attribute} : {value}")
         return self._get_attribute_payload(attribute, value)
 
+    def _get_preferred_property_key(self, profile: dict[str, Any], resource: str, preferred_keys: list[str]) -> str:
+        """Get the first available property key from preferred_keys list."""
+        resource_property = profile.get("property", {}).get(resource, {})
+        for key in preferred_keys:
+            if key in resource_property:
+                return key
+        return preferred_keys[-1]  # Return last key as fallback
+
 
 class ConnectSubDeviceProfile(ConnectDeviceProfile):
     def __init__(
