@@ -1,10 +1,13 @@
 # Release Notes
 
-## 1.0.10 (2026-03-26)
+## 1.0.11 (2026-03-27)
 ### Features
 * Add **particulate matter level** properties (air_purifier)
 ### Improvements
 * Support additional **wind strength** modes (air_conditioner, air_purifier): [#19](https://github.com/thinq-connect/pythinqconnect/issues/19)
+
+## 1.0.10 (2026-03-26)
+> ⚠️ **Deprecated** — Please use 1.0.11 instead. This version contains a side-effect issue affecting Home Assistant integration.
 
 ## 1.0.9 (2025-12-01)
 ### Features

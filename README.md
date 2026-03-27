@@ -7,30 +7,7 @@ The thinqconnect provides a robust interface for interacting with the [LG ThinQ 
 This SDK is designed to facilitate seamless integration with a range of LGE appliances, bases on [LG ThinQ API](https://smartsolution.developer.lge.com/en/apiManage/thinq_connect?s=1734332700509).
 
 # Notice
-* Please note that any unofficial ThinQ Projects(especially reverse-engineered client) are subject to unannounced changes or unavailability in 2025.
-
-# Features Roadmap - 2025
-
-### Devices
-* Ventilator
-* ShoeCare
-* ShoeCase
-* TBD
-
-### Features
-* Energy: Power Consumption
-    * The provided power consumption may vary by country and device.
-
-### Profiles
-* Display Light (Status/Control)
-    * Air Conditioner
-* Washing Cycle Count (Status)
-    * Washer/WashTower/WashCombo
-* Wind Direction (Status/Control)
-    * Air Conditioner
-* Room/Water Temperature Mode (Status)
-    * System Boiler
-* TBD
+* Since 2025, unofficial ThinQ projects—particularly reverse-engineered clients—may change without notice or become unavailable.
 
 # Key Features
 * Profile Retrieval: Access detailed profiles of 27 different home appliances.

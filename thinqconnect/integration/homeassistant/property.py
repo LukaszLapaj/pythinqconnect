@@ -183,7 +183,7 @@ class PropertyHolder:
         if status is None:
             return None
 
-        if isinstance(status, (int, float)):
+        if type(status) in (int, float):
             return status
 
         if self.data_type in ["enum", "boolean"]:
