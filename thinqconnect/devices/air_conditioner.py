@@ -7,8 +7,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, ClassVar
 
-from .connect_device import READABILITY, WRITABILITY, ConnectBaseDevice, ConnectDeviceProfile
+from .connect_device import READABILITY, TYPE, WRITABILITY, ConnectBaseDevice, ConnectDeviceProfile
 from .const import Property, Resource
+
+_AC_BONUS_READONLY_PROPERTIES: list[tuple[Property, str]] = [
+    (Property.PM1, "number"),
+    (Property.PM2, "number"),
+    (Property.PM10, "number"),
+    (Property.TOTAL_POLLUTION, "number"),
+    (Property.TOTAL_POLLUTION_LEVEL, "enum"),
+    (Property.FILTER_REMAIN_PERCENT, "number"),
+]
+
+_AC_BONUS_READWRITE_PROPERTIES: list[tuple[Property, str]] = [
+    (Property.POWER_SAVE_ENABLED, "boolean"),
+]
 
 
 class AirConditionerProfile(ConnectDeviceProfile):
@@ -129,6 +142,21 @@ class AirConditionerProfile(ConnectDeviceProfile):
             },
             custom_resources=["twoSetTemperature", "temperatureInUnits", "twoSetTemperatureInUnits"],
         )
+        self._inject_bonus_properties()
+
+    def _inject_bonus_properties(self) -> None:
+        """Inject synthetic profiles for properties sent via MQTT but absent from device API profile."""
+        injected = []
+        for prop_attr, prop_type in _AC_BONUS_READONLY_PROPERTIES:
+            if not self._get_prop_attr(prop_attr).get(READABILITY):
+                self._set_prop_attr(prop_attr, {TYPE: prop_type, READABILITY: True, WRITABILITY: False})
+                injected.append(str(prop_attr))
+        for prop_attr, prop_type in _AC_BONUS_READWRITE_PROPERTIES:
+            if not self._get_prop_attr(prop_attr).get(READABILITY):
+                self._set_prop_attr(prop_attr, {TYPE: prop_type, READABILITY: True, WRITABILITY: True})
+                injected.append(str(prop_attr))
+        for prop in injected:
+            self._property_map[prop] = self.get_property(prop)
 
     _CUSTOM_PROPERTY_MAPPING_TABLE = {
         Property.CURRENT_TEMPERATURE_C: "currentTemperature",
