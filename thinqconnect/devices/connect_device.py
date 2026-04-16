@@ -417,8 +417,11 @@ class ConnectBaseDevice(BaseDevice):
                     return
             if isinstance(resource_status, dict):
                 value = resource_status.get(prop_key)
+                if value is None:
+                    # LG API MQTT push sometimes uses "key:key" namespaced format
+                    value = resource_status.get(f"{prop_key}:{prop_key}")
             if is_updated:
-                if prop_key in resource_status:
+                if prop_key in resource_status or f"{prop_key}:{prop_key}" in resource_status:
                     self._set_status_attr(prop_attr, value)
                 return
 
