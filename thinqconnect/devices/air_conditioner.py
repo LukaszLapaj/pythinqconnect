@@ -18,6 +18,7 @@ class AirConditionerProfile(ConnectDeviceProfile):
             resource_map={
                 "airConJobMode": Resource.AIR_CON_JOB_MODE,
                 "operation": Resource.OPERATION,
+                "temperature": Resource.TEMPERATURE,
                 "temperatureInUnits": Resource.TEMPERATURE,
                 "twoSetTemperature": Resource.TWO_SET_TEMPERATURE,
                 "twoSetTemperatureInUnits": Resource.TWO_SET_TEMPERATURE,
@@ -37,6 +38,13 @@ class AirConditionerProfile(ConnectDeviceProfile):
                 "operation": {
                     "airConOperationMode": Property.AIR_CON_OPERATION_MODE,
                     "airCleanOperationMode": Property.AIR_CLEAN_OPERATION_MODE,
+                },
+                "temperature": {
+                    "currentTemperature": Property.CURRENT_TEMPERATURE,
+                    "targetTemperature": Property.TARGET_TEMPERATURE,
+                    "coolTargetTemperature": Property.COOL_TARGET_TEMPERATURE,
+                    "heatTargetTemperature": Property.HEAT_TARGET_TEMPERATURE,
+                    "unit": Property.TEMPERATURE_UNIT,
                 },
                 "temperatureInUnits": {
                     "currentTemperatureC": Property.CURRENT_TEMPERATURE_C,
@@ -70,6 +78,8 @@ class AirConditionerProfile(ConnectDeviceProfile):
                     "relativeMinuteToStart": Property.RELATIVE_MINUTE_TO_START,
                     "relativeHourToStop": Property.RELATIVE_HOUR_TO_STOP,
                     "relativeMinuteToStop": Property.RELATIVE_MINUTE_TO_STOP,
+                    "relativeStartTimer": Property.RELATIVE_START_TIMER,
+                    "relativeStopTimer": Property.RELATIVE_STOP_TIMER,
                     "absoluteHourToStart": Property.ABSOLUTE_HOUR_TO_START,
                     "absoluteMinuteToStart": Property.ABSOLUTE_MINUTE_TO_START,
                     "absoluteHourToStop": Property.ABSOLUTE_HOUR_TO_STOP,
@@ -78,6 +88,7 @@ class AirConditionerProfile(ConnectDeviceProfile):
                 "sleepTimer": {
                     "relativeHourToStop": Property.SLEEP_TIMER_RELATIVE_HOUR_TO_STOP,
                     "relativeMinuteToStop": Property.SLEEP_TIMER_RELATIVE_MINUTE_TO_STOP,
+                    "relativeStopTimer": Property.RELATIVE_STOP_TIMER,
                 },
                 "powerSave": {
                     "powerSaveEnabled": Property.POWER_SAVE_ENABLED,
@@ -106,6 +117,12 @@ class AirConditionerProfile(ConnectDeviceProfile):
                 },
                 "display": {"light": Property.DISPLAY_LIGHT},
                 "windDirection": {
+                    "airGuideWind": Property.WIND_AIR_GUIDE,
+                    "swirlWind": Property.WIND_SWIRL,
+                    "highCeilingWind": Property.WIND_HIGH_CEILING,
+                    "concentrationWind": Property.WIND_CONCENTRATION,
+                    "autoFitWind": Property.WIND_AUTO_FIT,
+                    "forestWind": Property.WIND_FOREST,
                     "rotateUpDown": Property.WIND_ROTATE_UP_DOWN,
                     "rotateLeftRight": Property.WIND_ROTATE_LEFT_RIGHT,
                 },
@@ -388,6 +405,9 @@ class AirConditionerDevice(ConnectBaseDevice):
             }
         )
 
+    async def set_relative_start_timer(self, state: str) -> dict | None:
+        return await self.do_enum_attribute_command(Property.RELATIVE_START_TIMER, state)
+
     async def set_relative_time_to_stop(self, hour: int, minute: int) -> dict | None:
         return await self.do_multi_attribute_command(
             {
@@ -395,6 +415,9 @@ class AirConditionerDevice(ConnectBaseDevice):
                 **({Property.RELATIVE_MINUTE_TO_STOP: minute} if minute != 0 else {}),
             }
         )
+
+    async def set_relative_stop_timer(self, state: str) -> dict | None:
+        return await self.do_enum_attribute_command(Property.RELATIVE_STOP_TIMER, state)
 
     async def set_absolute_time_to_start(self, hour: int, minute: int) -> dict | None:
         return await self.do_multi_attribute_command(
@@ -440,3 +463,21 @@ class AirConditionerDevice(ConnectBaseDevice):
 
     async def set_wind_rotate_left_right(self, wind_rotate_left_right: bool) -> dict | None:
         return await self.do_attribute_command(Property.WIND_ROTATE_LEFT_RIGHT, wind_rotate_left_right)
+
+    async def set_wind_air_guide(self, wind_air_guide: bool) -> dict | None:
+        return await self.do_attribute_command(Property.WIND_AIR_GUIDE, wind_air_guide)
+
+    async def set_wind_swirl(self, wind_swirl: bool) -> dict | None:
+        return await self.do_attribute_command(Property.WIND_SWIRL, wind_swirl)
+
+    async def set_wind_high_ceiling(self, wind_high_ceiling: bool) -> dict | None:
+        return await self.do_attribute_command(Property.WIND_HIGH_CEILING, wind_high_ceiling)
+
+    async def set_wind_concentration(self, wind_concentration: bool) -> dict | None:
+        return await self.do_attribute_command(Property.WIND_CONCENTRATION, wind_concentration)
+
+    async def set_wind_auto_fit(self, wind_auto_fit: bool) -> dict | None:
+        return await self.do_attribute_command(Property.WIND_AUTO_FIT, wind_auto_fit)
+
+    async def set_wind_forest(self, wind_forest: bool) -> dict | None:
+        return await self.do_attribute_command(Property.WIND_FOREST, wind_forest)
