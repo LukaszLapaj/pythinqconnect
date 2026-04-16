@@ -152,8 +152,8 @@ class ClimatePropertyStateSpec(PropertyStateSpec):
     support_temperature_range_key: str | None = None
     fan_mode_keys: tuple[str, ...] = field(default_factory=tuple)
     humidity_key: str | None = None
-    swing_mode_key: str | None = None
-    swing_horizontal_mode_key: str | None = None
+    swing_mode_key: str | tuple[str, ...] | None = None
+    swing_horizontal_mode_key: str | tuple[str, ...] | None = None
 
 
 CLIMATE_STATE_MAP = {
@@ -203,8 +203,18 @@ CLIMATE_STATE_MAP = {
         support_temperature_range_key=ThinQProperty.TWO_SET_ENABLED,
         fan_mode_keys=(ThinQProperty.WIND_STEP, ThinQProperty.WIND_STRENGTH),
         humidity_key=ThinQProperty.HUMIDITY,
-        swing_mode_key=ThinQProperty.WIND_ROTATE_UP_DOWN,
-        swing_horizontal_mode_key=ThinQProperty.WIND_ROTATE_LEFT_RIGHT,
+        swing_mode_key=(
+            ThinQProperty.WIND_ROTATE_UP_DOWN,
+            ThinQProperty.WIND_AIR_GUIDE,
+            ThinQProperty.WIND_AUTO_FIT,
+            ThinQProperty.WIND_HIGH_CEILING,
+            ThinQProperty.WIND_CONCENTRATION,
+            ThinQProperty.WIND_FOREST,
+        ),
+        swing_horizontal_mode_key=(
+            ThinQProperty.WIND_ROTATE_LEFT_RIGHT,
+            ThinQProperty.WIND_SWIRL,
+        ),
     ),
     ExtendedProperty.CLIMATE_SYSTEM_BOILER: ClimatePropertyStateSpec(
         power_key=ThinQProperty.BOILER_OPERATION_MODE,

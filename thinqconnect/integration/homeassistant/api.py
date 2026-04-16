@@ -329,12 +329,29 @@ class HABridge:
             ),
             fan_mode_holder=fan_mode_holder,
             humidity_holder=self._get_holder(spec.humidity_key, location),
-            swing_mode_holder=self._get_holder(spec.swing_mode_key, location),
-            swing_horizontal_mode_holder=self._get_holder(
+            swing_mode_holder=self._get_first_holder(spec.swing_mode_key, location),
+            swing_horizontal_mode_holder=self._get_first_holder(
                 spec.swing_horizontal_mode_key, location
             ),
             use_preferred_unit=True,
         )
+
+    def _get_first_holder(
+        self,
+        keys: str | tuple[str, ...] | None,
+        location: str | None,
+    ) -> PropertyHolder | None:
+        """Return the first existing holder from given key candidates."""
+        if keys is None:
+            return None
+        if isinstance(keys, str):
+            return self._get_holder(keys, location)
+
+        for key in keys:
+            if (holder := self._get_holder(key, location)) is not None:
+                return holder
+
+        return None
 
     def _create_climate_temperature_group(
         self,
@@ -1003,6 +1020,19 @@ async def _async_create_ha_bridges(
         profile,
         energy_profile,
     )
+    if device_type == DeviceType.AIR_CONDITIONER:
+        property_profile = profile.get("property", {}) if isinstance(profile, dict) else {}
+        _LOGGER.debug(
+            "[%s] AC raw API sections: windDirection=%s, airFlow=%s, timer=%s, "
+            "sleepTimer=%s, temperature=%s, temperatureInUnits=%s",
+            device_info.get("alias"),
+            property_profile.get("windDirection"),
+            property_profile.get("airFlow"),
+            property_profile.get("timer"),
+            property_profile.get("sleepTimer"),
+            property_profile.get("temperature"),
+            property_profile.get("temperatureInUnits"),
+        )
     # Create new device api instance.
     try:
         connect_device: ConnectBaseDevice = (
