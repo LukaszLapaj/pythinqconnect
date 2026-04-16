@@ -245,6 +245,24 @@ class HABridge:
                     self._create_device_state(device_spec, location)
                 )
 
+        self._log_active_writable_keys()
+
+    def _log_active_writable_keys(self) -> None:
+        """Log active writable keys for troubleshooting entity exposure."""
+        if self.device.device_type != DeviceType.AIR_CONDITIONER:
+            return
+
+        writable_keys = sorted(
+            key
+            for key, idx_list in self.idx_map.items()
+            if any(self.get_active_state(idx, ActiveMode.WRITABLE) for idx in idx_list)
+        )
+        _LOGGER.debug(
+            "[%s] AC active writable keys: %s",
+            self.device.alias,
+            writable_keys,
+        )
+
     def _setup_specified_states(
         self, key: str, spec: PropertyStateSpec, create_func: Callable
     ) -> None:
